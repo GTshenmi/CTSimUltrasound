@@ -299,7 +299,7 @@ if __name__ == '__main__':
     parser.add_argument("--img_size", type=int, default=256, help="size of each image dimension")
     parser.add_argument("--channels", type=int, default=1, help="number of image channels")
     parser.add_argument("--sample_interval", type=int, default=80, help="interval between image sampling")
-    parser.add_argument("--dataset_name", type=str, default="rf2us_test", help="name of the dataset")
+    parser.add_argument("--dataset_name", type=str, default="rf2us1", help="name of the dataset")
     parser.add_argument("--rfdata_len", type=int, default=1024, help="length of rf data")
     parser.add_argument("--split_test", type=bool, default=True, help="if split test")
     parser.add_argument("--network", type=str, default="aecgan", help="if split test")
