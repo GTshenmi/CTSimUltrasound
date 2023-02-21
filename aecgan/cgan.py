@@ -160,7 +160,7 @@ class Discriminator(nn.Module):
         def discriminator_block(in_filters, out_filters, normalization=True):
             """Returns downsampling layers of each discriminator block"""
             layers = [
-                #nn.Conv2d(in_filters, in_filters, 3, stride=1, padding=1),
+                # nn.Conv2d(in_filters, in_filters, 3, stride=1, padding=1),
                 nn.Conv2d(in_filters, out_filters, 4, stride=2, padding=1),
                 nn.Conv2d(out_filters, out_filters, 3, stride=1, padding=1),
             ]
@@ -374,7 +374,7 @@ class ConditionGan():
         train_loss = []
         test_loss = []
 
-        rootpath = os.path.join("./saved_models/", modelname)
+        rootpath = os.path.join("../saved_models/", modelname)
         model_list = os.listdir(rootpath)
 
         with torch.no_grad():
@@ -473,8 +473,8 @@ class ConditionGan():
         name = model_name
         # model_path = os.path.join(rootpath,best_model)
         print(best_model)
-        save_path_train = os.path.join("./images/",name,"train")
-        save_path_test = os.path.join("./images/",name,"test")
+        save_path_train = os.path.join("../images/", name, "train")
+        save_path_test = os.path.join("../images/", name, "test")
 
         os.makedirs(save_path_train, exist_ok=True)
         os.makedirs(save_path_test, exist_ok=True)
@@ -498,7 +498,7 @@ class ConditionGan():
 
                 img_sample = torch.cat((fake_imgs.data, real_imgs.data), -2)
 
-                save_image(img_sample, "%s/test_%s.png" % (save_path_train, i), nrow=5, normalize=True)
+                save_image(img_sample, "%s/train_%s.png" % (save_path_train, i), nrow=5, normalize=True)
 
                 train_loss.append(self.Tensor.cpu(loss_pixel))
 
@@ -551,7 +551,7 @@ class ConditionGan():
             # plt.show()
 
 if __name__ == '__main__':
-    os.makedirs("images", exist_ok=True)
+    os.makedirs("../images", exist_ok=True)
 
     parser = argparse.ArgumentParser()
     parser.add_argument("--n_epochs", type=int, default=200, help="number of epochs of training")

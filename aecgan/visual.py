@@ -30,6 +30,5 @@ def ShowModelLoss():
 
 # def GengerateImg(model_path):
 
-
 if __name__ == '__main__':
     ShowModelLoss()

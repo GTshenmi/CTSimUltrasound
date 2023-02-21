@@ -38,6 +38,7 @@ device = torch.device("cuda" if cuda else "cpu")
 
 Tensor = torch.cuda.FloatTensor if cuda else torch.FloatTensor
 
+
 class autoencoder(nn.Module):
     def __init__(self):
         super(autoencoder, self).__init__()
@@ -82,19 +83,19 @@ class autoencoder(nn.Module):
 
 
     def forward(self, x):
+
         enc = self.encoder(x)
         #print(x.shape)
         dec = self.decoder(enc)
         #print(x.shape)
         return enc,dec
 
-
 if __name__ == '__main__':
     #TrainModelAE()
     #device = torch.device('cpu')
     from dataset import MyDataSet
 
-    os.makedirs("images", exist_ok=True)
+    os.makedirs("../images", exist_ok=True)
     os.makedirs("images/%s" % opt.dataset_name, exist_ok=True)
     os.makedirs("saved_models/%s" % opt.dataset_name, exist_ok=True)
 
@@ -128,7 +129,7 @@ if __name__ == '__main__':
     )
 
 
-    model = autoencoder()
+    model = AutoEncoder()
     criteon = nn.MSELoss()
     optimizer = optim.Adam(model.parameters(), lr=opt.lr)
     print(model)
@@ -292,7 +293,7 @@ if __name__ == '__main__':
         train_loss = []
         test_loss = []
         #rootpath = "./saved_models/ae6"
-        rootpath = os.path.join("./saved_models/",modelname)
+        rootpath = os.path.join("../saved_models/", modelname)
         #rootpath = "C:/Users/IzumiSagiri/Desktop/ae6/"
 
         model_list = os.listdir(rootpath)
