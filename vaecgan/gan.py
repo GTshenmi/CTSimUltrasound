@@ -1,7 +1,7 @@
 import torch
 import torch.nn as nn
 from unet import UNetUp,UNetDown
-
+import torch.nn.functional as F
 class Generator(nn.Module):
     def __init__(self, in_channels=8, out_channels=1,img_shape=(1, 256, 256)):
         super(Generator, self).__init__()
@@ -90,3 +90,26 @@ class Discriminator(nn.Module):
 
         return outpuut
 
+class MultiStageDiscriminator(nn.Module):
+    def __init__(self, in_channels=1):
+        super(MultiStageDiscriminator, self).__init__()
+        self.discriminator1 = Discriminator()
+        self.discriminator2 = Discriminator()
+        self.discriminator3 = Discriminator()
+
+    def forward(self,condition,img):
+        # Concatenate image and condition image by channels to produce input
+
+        img1 = torch.cat((img,condition), 1)
+
+        output1 = self.discriminator1(img1)
+
+        img2 = F.max_pool2d(img1,2)
+
+        output2 = self.discriminator2(img2)
+
+        img3 = F.max_pool2d(img2, 2)
+
+        output3 = self.discriminator3(img3)
+
+        return output1,output2,output3

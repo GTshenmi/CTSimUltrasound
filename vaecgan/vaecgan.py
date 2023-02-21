@@ -312,5 +312,9 @@ if __name__ == '__main__':
         vaecgan = VAECGan(opt)
         vaecgan.TrainModel()
 
-
+#decode:upsample+conv2d 组合代替 transposed_conv2d，可以减少 checkerboard 的产生,可以采用 pixelshuffle
+#gated-conv2d
+#multi-stage discriminator
+#Coarse2fine
+#pix2pixHD
 
