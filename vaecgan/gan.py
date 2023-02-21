@@ -76,7 +76,9 @@ class Discriminator(nn.Module):
             *discriminator_block(256, 512),
             nn.ZeroPad2d((1, 0, 1, 0)),
             nn.Conv2d(512, 1, 4, padding=1, bias=False),
-            nn.Tanh(),
+            nn.ReLU(),
+            #
+            # nn.Tanh(),
         )
 
     def forward(self,condition,img):
@@ -87,3 +89,4 @@ class Discriminator(nn.Module):
         outpuut = self.model(img_input)
 
         return outpuut
+

@@ -44,3 +44,4 @@ class AutoEncoder(nn.Module):
         enc = self.encoder(x)
         dec = self.decoder(enc)
         return enc,dec
+

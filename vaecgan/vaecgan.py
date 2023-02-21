@@ -99,8 +99,8 @@ class VAECGan():
         img_sample_test = torch.cat((test_fake.data,test_real.data), -2)
         img_sample_train = torch.cat((train_fake.data,train_real.data), -2)
 
-        save_image(img_sample_test, "images/%s/test_%s.png" % (opt.dataset_name, batches_done), nrow=5, normalize=True)
-        save_image(img_sample_train,"images/%s/train_%s.png" % (opt.dataset_name, batches_done), nrow=5, normalize=True)
+        save_image(img_sample_test, "images/%s/test_%s.png" % (opt.dataset_name, batches_done), nrow=5, normalize=True,range = (-1.0,1.0))
+        save_image(img_sample_train,"images/%s/train_%s.png" % (opt.dataset_name, batches_done), nrow=5, normalize=True,range = (-1.0,1.0))
 
     def SaveModel(self,epoch):
 
@@ -208,7 +208,7 @@ class VAECGan():
                 loss_AE = self.criterion_AE(decoder_rf,rf_datas)
 
                 # Total loss
-                loss_G = loss_GAN + self.lambda_pixel * loss_pixel + 10 * loss_AE
+                loss_G = 10 * loss_GAN + self.lambda_pixel * loss_pixel + 10 * loss_AE
 
                 loss_G.backward()
 
@@ -292,14 +292,14 @@ if __name__ == '__main__':
     parser = argparse.ArgumentParser()
     parser.add_argument("--n_epochs", type=int, default=200, help="number of epochs of training")
     parser.add_argument("--batch_size", type=int, default=2, help="size of the batches")
-    parser.add_argument("--lr", type=float, default=0.0001, help="adam: learning rate")
+    parser.add_argument("--lr", type=float, default=0.001, help="adam: learning rate")
     parser.add_argument("--b1", type=float, default=0.5, help="adam: decay of first order momentum of gradient")
     parser.add_argument("--b2", type=float, default=0.999, help="adam: decay of first order momentum of gradient")
     parser.add_argument("--n_cpu", type=int, default=8, help="number of cpu threads to use during batch generation")
     parser.add_argument("--img_size", type=int, default=256, help="size of each image dimension")
     parser.add_argument("--channels", type=int, default=1, help="number of image channels")
     parser.add_argument("--sample_interval", type=int, default=80, help="interval between image sampling")
-    parser.add_argument("--dataset_name", type=str, default="rf2us1", help="name of the dataset")
+    parser.add_argument("--dataset_name", type=str, default="rf2us2", help="name of the dataset")
     parser.add_argument("--rfdata_len", type=int, default=1024, help="length of rf data")
     parser.add_argument("--split_test", type=bool, default=True, help="if split test")
     parser.add_argument("--network", type=str, default="aecgan", help="if split test")
@@ -311,4 +311,6 @@ if __name__ == '__main__':
     with torch.cuda.device(opt.use_gpu):
         vaecgan = VAECGan(opt)
         vaecgan.TrainModel()
+
+
 

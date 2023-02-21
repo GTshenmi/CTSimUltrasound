@@ -147,8 +147,22 @@ class MyDataSet(Dataset):
         # print(self.mode)
         # print(us_path)
         us = Image.open(us_path)
+
+        # img = np.array(us)
+        #
+        # print(np.shape(img))
+        #
+        # print(img)
+        # print(np.max(img))
+
         if self.img_transform:
             us = self.img_transform(us)
+
+        # img = np.array(us)
+        #
+        # print(np.shape(img))
+        #
+        # print((np.min(img),np.max(img)))
 
         rf_name = us_name.replace(".png","")
         rf_path = os.path.join(self.rf_dir, rf_name)
@@ -185,3 +199,4 @@ if __name__ == '__main__':
     print(np.shape(rf))
 
     print(rf)
+
