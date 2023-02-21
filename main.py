@@ -117,10 +117,11 @@ import numpy as np
 #
 # print(loss)
 
-f = open("./datasetnew/us_image_train.txt", "r",encoding='utf-8')
+f = open("./datasetnew/us_image_val.txt", "r",encoding='utf-8')
 train_list = f.read().splitlines()
-print(train_list)
+#print(train_list)
 f.close()
 
 for train in train_list:
-    print(train.replace("\n",""))
+    if "patient117_frame01_slice9" in train:
+        print(True)

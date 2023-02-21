@@ -21,7 +21,6 @@ class AutoEncoder(nn.Module):
             nn.MaxPool2d((1, 4)),  # b, 4, 256, 256
         )
 
-
         self.decoder = nn.Sequential(
 
             nn.ConvTranspose2d(8, 64,(3,4), stride=(1,4), padding=(1,0)),  # b, 64, 256, 1024

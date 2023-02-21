@@ -6,23 +6,28 @@ class Generator(nn.Module):
     def __init__(self, in_channels=8, out_channels=1,img_shape=(1, 256, 256)):
         super(Generator, self).__init__()
 
-        self.down1 = UNetDown(in_channels, 64, normalize=False)
-        self.down2 = UNetDown(64, 128)
-        self.down3 = UNetDown(128, 256)
-        self.down4 = UNetDown(256, 512, dropout=0.3)
-        self.down5 = UNetDown(512, 512, dropout=0.4)
-        self.down6 = UNetDown(512, 512, dropout=0.5)
+        self.down1 = UNetDown(in_channels, 64, normalize=False)#b 8 256 256 -> b 64 128 128
+        self.down2 = UNetDown(64, 128)                         #b 64 128 128 -> b 128 64 64
+        self.down3 = UNetDown(128, 256,dropout=0.5)            #b 128 64 64 -> b 256 32 32
+        self.down4 = UNetDown(256, 512, dropout=0.5)           #b 256 32 32 -> b 512 16 16
+        self.down5 = UNetDown(512, 512)                        #b 512 16 16 -> b 512 8 8
 
-        self.up1 = UNetUp(512, 512, dropout=0.5)
-        self.up2 = UNetUp(1024, 512, dropout=0.4)
-        self.up3 = UNetUp(1024, 256, dropout=0.3)
-        self.up4 = UNetUp(512, 128)
-        self.up5 = UNetUp(256, 64)
+        self.up1 = nn.Sequential(
+            nn.ConvTranspose2d(512, 1024,3, 1, 1),  # b 512 8 8 -> b 1024 8 8
+            nn.ConvTranspose2d(1024, 1024, 3,1,1),  # b 1024 8 8 -> b 1024 8 8
+            nn.ConvTranspose2d(1024, 512, 4, 2, 1,bias = False), # b, 1024, 8, 8 -> b 512 16 16
+            nn.LeakyReLU(0.2, inplace=True),
+        )
+
+        self.up2 = UNetUp(1024, 256, dropout=0.5) # b 512+512 16 16 -> b 256 32 32
+        self.up3 = UNetUp(512, 128, dropout=0.5) # b 256+256 32 32 -> b 128 64 64
+        self.up4 = UNetUp(256, 64) # b 128+128 64 64 -> b 64 128 128
+        self.up5 = UNetUp(128, 32)  # b 64+64 128 128 -> b 32 256 256
 
         self.final = nn.Sequential(
-            nn.Upsample(scale_factor=2),
-            nn.ZeroPad2d((1, 0, 1, 0)),
-            nn.Conv2d(128, out_channels, 4, padding=1),
+            # nn.ZeroPad2d((1, 0, 1, 0)),
+            nn.Conv2d(32, 16, 3, 1, 1),
+            nn.Conv2d(16, out_channels, 3, 1,1),
             nn.Tanh(),
         )
 
@@ -30,15 +35,13 @@ class Generator(nn.Module):
 
     def forward(self,condition):
         # U-Net generator with skip connections from encoder to decoder
-
         d1 = self.down1(condition)
         d2 = self.down2(d1)
         d3 = self.down3(d2)
         d4 = self.down4(d3)
         d5 = self.down5(d4)
-        d6 = self.down6(d5)
 
-        u1 = self.up1(d6, d5)
+        u1 = self.up1(d5)
         u2 = self.up2(u1, d4)
         u3 = self.up3(u2, d3)
         u4 = self.up4(u3, d2)
