@@ -3,26 +3,35 @@ import matplotlib.pyplot as plt
 
 def ShowModelLoss():
 
-    train_loss = np.load("./loss/rf2us2/train_loss.npy")
+    train_loss = np.load("./loss/rf2us3/train_loss.npy")
 
     loss_D = []
     loss_G = []
+    loss_P = []
+    loss_GAN = []
 
     for loss in train_loss:
         loss_D.append(loss[0])
         loss_G.append(loss[1])
+        loss_P.append(loss[3])
+        loss_GAN.append(loss[4])
 
-    fig = plt.figure(1) #如果不传入参数默认画板1
-    #第2步创建画纸，并选择画纸1
-    ax1=plt.subplot(2,1,1)
+    fig = plt.figure(1)
+    ax1=plt.subplot(2,2,1)
     ax1.set_title("Loss D")
-    #在画纸1上绘图
     plt.plot(loss_D)
-    #选择画纸2
-    ax2=plt.subplot(2,1,2)
+    ax2=plt.subplot(2,2,2)
     ax2.set_title("Loss G")
-    #在画纸2上绘图
     plt.plot(loss_G)
+
+    ax3=plt.subplot(2,2,3)
+    ax3.set_title("Loss Pix")
+    plt.plot(loss_P)
+
+    ax4=plt.subplot(2,2,4)
+    ax4.set_title("Loss Gan")
+    plt.plot(loss_GAN)
+
     #显示图像
     plt.show()
 

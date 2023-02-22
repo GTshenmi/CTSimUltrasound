@@ -7,65 +7,100 @@ import argparse
 import numpy as np
 
 
-parser = argparse.ArgumentParser()
-parser.add_argument("--n_epochs", type=int, default=200, help="number of epochs of training")
-parser.add_argument("--batch_size", type=int, default=2, help="size of the batches")
-parser.add_argument("--lr", type=float, default=0.0001, help="adam: learning rate")
-parser.add_argument("--b1", type=float, default=0.5, help="adam: decay of first order momentum of gradient")
-parser.add_argument("--b2", type=float, default=0.999, help="adam: decay of first order momentum of gradient")
-parser.add_argument("--n_cpu", type=int, default=8, help="number of cpu threads to use during batch generation")
-parser.add_argument("--img_size", type=int, default=256, help="size of each image dimension")
-parser.add_argument("--channels", type=int, default=1, help="number of image channels")
-parser.add_argument("--sample_interval", type=int, default=80, help="interval between image sampling")
-parser.add_argument("--dataset_name", type=str, default="rf2us1", help="name of the dataset")
-parser.add_argument("--rfdata_len", type=int, default=1024, help="length of rf data")
-parser.add_argument("--split_test", type=bool, default=True, help="if split test")
-parser.add_argument("--network", type=str, default="aecgan", help="if split test")
-parser.add_argument("--use_gpu", type=int, default=0, help="use gpu id")
+a = np.array([1,2,3,4,5])
+train_loss = np.array([1,2,3,4,5])
 
-opt = parser.parse_args()
+for i in range(2):
+    train_loss = np.vstack((train_loss, a + i +1))
 
-rf_transforms = [
-    transforms.ToTensor(),
-]
-img_transforms = [
+np.save("test.npy",train_loss)
+res = np.load("test.npy")
 
-    transforms.Resize((opt.img_size, opt.img_size)),
+print("__________________________")
+print(res)
 
-    transforms.ToTensor(),
+a = np.array([1,2,3,4,5])
+train_loss = np.array([1,2,3,4,5])
+for i in range(5):
+    train_loss = np.vstack((train_loss, a + i +1))
 
-    transforms.Normalize(0.5, 0.5),
-]
+np.save("test.npy",train_loss)
 
-dataloader = DataLoader(
-    MyDataSet(root="../datasetnew/", opt=opt, img_transform=img_transforms, rf_transform=rf_transforms),
-    batch_size=1,
-    shuffle=True,
-    num_workers=1,
-    drop_last=True,
-)
+res = np.load("test.npy")
 
-Tensor = torch.cuda.FloatTensor
+print("__________________________")
+print(res)
 
-for i, batch in enumerate(dataloader):
-    # Model inputs
-    labels = batch["us"]
-    rf_datas = batch["rf_data"]
+a = np.array([1,2,3,4,5])
+train_loss = np.array([1,2,3,4,5])
+for i in range(3):
+    train_loss = np.vstack((train_loss, a + i +1))
 
-    batch_size = labels.shape[0]
+np.save("test.npy",train_loss)
 
-    # Configure input
-    # real_imgs = labels.type(Tensor)
-    real_imgs = labels.type(Tensor)
-    rf_datas = rf_datas.type(Tensor)
+res = np.load("test.npy")
 
-    img = np.array(Tensor.cpu(real_imgs))
-
-    print(img)
-
-    print(np.shape(img))
-
-    print((np.min(img), np.max(img)))
+print("__________________________")
+print(res)
+# parser = argparse.ArgumentParser()
+# parser.add_argument("--n_epochs", type=int, default=200, help="number of epochs of training")
+# parser.add_argument("--batch_size", type=int, default=2, help="size of the batches")
+# parser.add_argument("--lr", type=float, default=0.0001, help="adam: learning rate")
+# parser.add_argument("--b1", type=float, default=0.5, help="adam: decay of first order momentum of gradient")
+# parser.add_argument("--b2", type=float, default=0.999, help="adam: decay of first order momentum of gradient")
+# parser.add_argument("--n_cpu", type=int, default=8, help="number of cpu threads to use during batch generation")
+# parser.add_argument("--img_size", type=int, default=256, help="size of each image dimension")
+# parser.add_argument("--channels", type=int, default=1, help="number of image channels")
+# parser.add_argument("--sample_interval", type=int, default=80, help="interval between image sampling")
+# parser.add_argument("--dataset_name", type=str, default="rf2us1", help="name of the dataset")
+# parser.add_argument("--rfdata_len", type=int, default=1024, help="length of rf data")
+# parser.add_argument("--split_test", type=bool, default=True, help="if split test")
+# parser.add_argument("--network", type=str, default="aecgan", help="if split test")
+# parser.add_argument("--use_gpu", type=int, default=0, help="use gpu id")
+#
+# opt = parser.parse_args()
+#
+# rf_transforms = [
+#     transforms.ToTensor(),
+# ]
+# img_transforms = [
+#
+#     transforms.Resize((opt.img_size, opt.img_size)),
+#
+#     transforms.ToTensor(),
+#
+#     transforms.Normalize(0.5, 0.5),
+# ]
+#
+# dataloader = DataLoader(
+#     MyDataSet(root="../datasetnew/", opt=opt, img_transform=img_transforms, rf_transform=rf_transforms),
+#     batch_size=1,
+#     shuffle=True,
+#     num_workers=1,
+#     drop_last=True,
+# )
+#
+# Tensor = torch.cuda.FloatTensor
+#
+# for i, batch in enumerate(dataloader):
+#     # Model inputs
+#     labels = batch["us"]
+#     rf_datas = batch["rf_data"]
+#
+#     batch_size = labels.shape[0]
+#
+#     # Configure input
+#     # real_imgs = labels.type(Tensor)
+#     real_imgs = labels.type(Tensor)
+#     rf_datas = rf_datas.type(Tensor)
+#
+#     img = np.array(Tensor.cpu(real_imgs))
+#
+#     print(img)
+#
+#     print(np.shape(img))
+#
+#     print((np.min(img), np.max(img)))
     # print(real_imgs)
     # print("______________")
     # print(rf_datas)
