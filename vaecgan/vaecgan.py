@@ -1,5 +1,5 @@
 from autoencoder import AutoEncoder
-from gan import Generator,Discriminator
+from gan import Generator,Discriminator,MultiStageDiscriminator
 from datasetnew import MyDataSet
 
 import os
@@ -25,6 +25,8 @@ class VAECGan():
         self.img_shape = (opt.channels, opt.img_size, opt.img_size)
         self.input_shape = (128, opt.rfdata_len)
         self.patch = (1, opt.img_size // 2 ** 4, opt.img_size // 2 ** 4)
+        self.patch2 = (1, opt.img_size // 2 ** 5, opt.img_size // 2 ** 5)
+        self.patch3 = (1, opt.img_size // 2 ** 6, opt.img_size // 2 ** 6)
 
         os.makedirs("images/%s" % opt.dataset_name, exist_ok=True)
         os.makedirs("saved_models/%s" % opt.dataset_name, exist_ok=True)
@@ -60,7 +62,8 @@ class VAECGan():
         # Initialize generator and discriminator
         self.generator = Generator(img_shape=self.img_shape)
         self.autoencoder = AutoEncoder()
-        self.discriminator = Discriminator()
+        # self.discriminator = Discriminator()
+        self.discriminator = MultiStageDiscriminator()
 
         # Optimizers
         self.optimizer_G = torch.optim.Adam(params=chain(self.generator.parameters(),
@@ -182,6 +185,12 @@ class VAECGan():
                 valid =self.Tensor(np.ones((batch_size, *self.patch)))
                 fake = self.Tensor(np.zeros((batch_size, *self.patch)))
 
+                valid2 =self.Tensor(np.ones((batch_size, *self.patch2)))
+                fake2 = self.Tensor(np.zeros((batch_size, *self.patch2)))
+
+                valid3 =self.Tensor(np.ones((batch_size, *self.patch3)))
+                fake3 = self.Tensor(np.zeros((batch_size, *self.patch3)))
+
                 # Configure input
                 real_imgs = labels.type(self.Tensor)
                 rf_datas = rf_datas.type(self.Tensor)
@@ -199,9 +208,9 @@ class VAECGan():
                 # print(fake_imgs.shape)
                 # print(encoder_rf.shape)
 
-                pred_fake = self.discriminator(encoder_rf,fake_imgs)
+                pred_fake,pred_fake2,pred_fake3 = self.discriminator(encoder_rf,fake_imgs)
 
-                loss_GAN = self.criterion_GAN(pred_fake, valid)
+                loss_GAN = (self.criterion_GAN(pred_fake, valid) + self.criterion_GAN(pred_fake2, valid2) + self.criterion_GAN(pred_fake3, valid3))/3.0
 
                 # Pixel-wise loss
                 loss_pixel = self.criterion_pixelwise(fake_imgs, real_imgs)
@@ -222,12 +231,13 @@ class VAECGan():
                 self.optimizer_D.zero_grad()
 
                 # Real loss
-                pred_real = self.discriminator(encoder_rf.detach(),real_imgs)
-                loss_real = self.criterion_GAN(pred_real, valid)
+                pred_real,pred_real2,pred_real3 = self.discriminator(encoder_rf.detach(),real_imgs)
+                loss_real = (self.criterion_GAN(pred_real, valid) + self.criterion_GAN(pred_real2, valid2) + self.criterion_GAN(pred_real3, valid3))/3.0
 
                 # Fake loss
-                pred_fake = self.discriminator(encoder_rf.detach(),fake_imgs.detach())
-                loss_fake = self.criterion_GAN(pred_fake, fake)
+                pred_fake,pred_fake2,pred_fake3 = self.discriminator(encoder_rf.detach(),fake_imgs.detach())
+
+                loss_fake = (self.criterion_GAN(pred_fake, fake)+ self.criterion_GAN(pred_fake2, fake2) + self.criterion_GAN(pred_fake3, fake3))/3.0
 
                 # Total loss
                 loss_D = 0.5 * (loss_real + loss_fake)

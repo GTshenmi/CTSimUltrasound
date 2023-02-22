@@ -3,7 +3,7 @@ import matplotlib.pyplot as plt
 
 def ShowModelLoss():
 
-    train_loss = np.load("./loss/rf2us3/train_loss.npy")
+    train_loss = np.load("./loss/rf2us4/train_loss.npy")
 
     loss_D = []
     loss_G = []
