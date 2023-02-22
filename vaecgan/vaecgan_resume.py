@@ -60,10 +60,13 @@ class VAECGan():
         )
 
         # Initialize generator and discriminator
-        self.generator = Generator(img_shape=self.img_shape)
-        self.autoencoder = AutoEncoder()
+        # self.generator = Generator(img_shape=self.img_shape)
+        # self.autoencoder = AutoEncoder()
         # self.discriminator = Discriminator()
-        self.discriminator = MultiStageDiscriminator()
+        self.generator = torch.load("./saved_models/rf2us4/generator_199.pth")
+        self.autoencoder = torch.load("./saved_models/rf2us4/autoencoder_199.pth")
+        self.discriminator = torch.load("./saved_models/rf2us4/discriminator_199.pth")
+        #self.discriminator = MultiStageDiscriminator()
 
         # Optimizers
         self.optimizer_G = torch.optim.Adam(params=chain(self.generator.parameters(),
@@ -88,6 +91,7 @@ class VAECGan():
 
         self.train_loss = np.zeros(5)
         self.test_loss = np.zeros(5)
+        self.train_loss = np.load("./loss/rf2us4/train_loss.npy")
 
     def SampleImg(self,batches_done,train_real,train_fake):
         """Saves a generated sample from the validation set"""
@@ -160,8 +164,8 @@ class VAECGan():
 
     def SaveLoss(self):
 
-        np.save("loss/%s/train_loss.npy" % (opt.dataset_name),self.train_loss)
-        np.save("loss/%s/test_loss.npy" % (opt.dataset_name), self.test_loss)
+        np.save("loss/%s/train_loss_resume.npy" % (opt.dataset_name),self.train_loss)
+        np.save("loss/%s/test_loss_resume.npy" % (opt.dataset_name), self.test_loss)
 
     def TrainModel(self):
 
@@ -171,7 +175,7 @@ class VAECGan():
         print(self.autoencoder)
         real_imgs = None
         fake_imgs = None
-        for epoch in range(self.opt.n_epochs):
+        for epoch in range(200,200+self.opt.n_epochs):
             train_loss = np.zeros(5)
             for i, batch in enumerate(self.dataloader):
 
@@ -208,9 +212,9 @@ class VAECGan():
                 # print(fake_imgs.shape)
                 # print(encoder_rf.shape)
 
-                pred_fake,pred_fake2,pred_fake3 = self.discriminator(encoder_rf,fake_imgs)
+                pred_fake = self.discriminator(encoder_rf,fake_imgs)
 
-                loss_GAN = (self.criterion_GAN(pred_fake, valid) + self.criterion_GAN(pred_fake2, valid2) + self.criterion_GAN(pred_fake3, valid3))/3.0
+                loss_GAN = self.criterion_GAN(pred_fake, valid)
 
                 # Pixel-wise loss
                 loss_pixel = self.criterion_pixelwise(fake_imgs, real_imgs)
@@ -231,13 +235,13 @@ class VAECGan():
                 self.optimizer_D.zero_grad()
 
                 # Real loss
-                pred_real,pred_real2,pred_real3 = self.discriminator(encoder_rf.detach(),real_imgs)
-                loss_real = (self.criterion_GAN(pred_real, valid) + self.criterion_GAN(pred_real2, valid2) + self.criterion_GAN(pred_real3, valid3))/3.0
+                pred_real = self.discriminator(encoder_rf.detach(),real_imgs)
+                loss_real = self.criterion_GAN(pred_real, valid)
 
                 # Fake loss
-                pred_fake,pred_fake2,pred_fake3 = self.discriminator(encoder_rf.detach(),fake_imgs.detach())
+                pred_fake = self.discriminator(encoder_rf.detach(),fake_imgs.detach())
 
-                loss_fake = (self.criterion_GAN(pred_fake, fake)+ self.criterion_GAN(pred_fake2, fake2) + self.criterion_GAN(pred_fake3, fake3))/3.0
+                loss_fake = self.criterion_GAN(pred_fake, fake)
 
                 # Total loss
                 loss_D = 0.5 * (loss_real + loss_fake)
@@ -294,16 +298,16 @@ class VAECGan():
 
             self.SaveModel(epoch)
 
-            np.save("loss/%s/train_loss.npy" % (opt.dataset_name), self.train_loss)
+            np.save("loss/%s/train_loss_resume.npy" % (opt.dataset_name), self.train_loss)
 
-        np.save("loss/%s/train_loss.npy" % (opt.dataset_name), self.train_loss)
+        np.save("loss/%s/train_loss_resume.npy" % (opt.dataset_name), self.train_loss)
 
 
 if __name__ == '__main__':
     os.makedirs("../images", exist_ok=True)
 
     parser = argparse.ArgumentParser()
-    parser.add_argument("--n_epochs", type=int, default=300, help="number of epochs of training")
+    parser.add_argument("--n_epochs", type=int, default=100, help="number of epochs of training")
     parser.add_argument("--batch_size", type=int, default=2, help="size of the batches")
     parser.add_argument("--lr", type=float, default=0.00025, help="adam: learning rate")
     parser.add_argument("--b1", type=float, default=0.5, help="adam: decay of first order momentum of gradient")
@@ -312,11 +316,11 @@ if __name__ == '__main__':
     parser.add_argument("--img_size", type=int, default=256, help="size of each image dimension")
     parser.add_argument("--channels", type=int, default=1, help="number of image channels")
     parser.add_argument("--sample_interval", type=int, default=80, help="interval between image sampling")
-    parser.add_argument("--dataset_name", type=str, default="rf2us5", help="name of the dataset")
+    parser.add_argument("--dataset_name", type=str, default="rf2us4", help="name of the dataset")
     parser.add_argument("--rfdata_len", type=int, default=1024, help="length of rf data")
     parser.add_argument("--split_test", type=bool, default=True, help="if split test")
     parser.add_argument("--network", type=str, default="aecgan", help="if split test")
-    parser.add_argument("--use_gpu", type=int, default=1, help="use gpu id")
+    parser.add_argument("--use_gpu", type=int, default=0, help="use gpu id")
     parser.add_argument("--resume", type=bool, default=True, help="if resume train")
 
     opt = parser.parse_args()

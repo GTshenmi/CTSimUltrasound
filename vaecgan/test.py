@@ -19,29 +19,16 @@ res = np.load("test.npy")
 print("__________________________")
 print(res)
 
-a = np.array([1,2,3,4,5])
-train_loss = np.array([1,2,3,4,5])
+
 for i in range(5):
-    train_loss = np.vstack((train_loss, a + i +1))
+    res = np.vstack((res, a + i +1+3))
 
-np.save("test.npy",train_loss)
-
+np.save("test.npy",res)
 res = np.load("test.npy")
 
 print("__________________________")
 print(res)
 
-a = np.array([1,2,3,4,5])
-train_loss = np.array([1,2,3,4,5])
-for i in range(3):
-    train_loss = np.vstack((train_loss, a + i +1))
-
-np.save("test.npy",train_loss)
-
-res = np.load("test.npy")
-
-print("__________________________")
-print(res)
 # parser = argparse.ArgumentParser()
 # parser.add_argument("--n_epochs", type=int, default=200, help="number of epochs of training")
 # parser.add_argument("--batch_size", type=int, default=2, help="size of the batches")
