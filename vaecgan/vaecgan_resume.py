@@ -264,7 +264,7 @@ class VAECGan():
                     "\r[Epoch %d/%d] [Batch %d/%d] [D loss: %f] [G loss: %f, AE loss: %f, pixel: %f, adv: %f] ETA: %s\r\n"
                     % (
                         epoch,
-                        self.opt.n_epochs,
+                        self.opt.n_epochs+200,
                         i,
                         len(self.dataloader),
                         loss_D.item(),
