@@ -5,7 +5,7 @@ def ShowModelLoss():
 
     datasetname = "rf2us4"
 
-    train_loss = np.load(f'./loss/{datasetname}/train_loss.npy')
+    train_loss = np.load(f'./loss/{datasetname}/train_loss_resume.npy')
 
     loss_D = []
     loss_G = []
