@@ -20,8 +20,8 @@ def ShowModelLoss():
         loss_P.append(loss[3])
         loss_GAN.append(loss[4])
         index = index + 1
-        if index >= 100:
-            break
+        # if index >= 150:
+        #     break
 
     fig = plt.figure(1)
     fig.suptitle(datasetname)

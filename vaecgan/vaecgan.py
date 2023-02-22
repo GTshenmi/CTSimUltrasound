@@ -303,7 +303,7 @@ if __name__ == '__main__':
     os.makedirs("../images", exist_ok=True)
 
     parser = argparse.ArgumentParser()
-    parser.add_argument("--n_epochs", type=int, default=200, help="number of epochs of training")
+    parser.add_argument("--n_epochs", type=int, default=300, help="number of epochs of training")
     parser.add_argument("--batch_size", type=int, default=2, help="size of the batches")
     parser.add_argument("--lr", type=float, default=0.0001, help="adam: learning rate")
     parser.add_argument("--b1", type=float, default=0.5, help="adam: decay of first order momentum of gradient")
@@ -312,7 +312,7 @@ if __name__ == '__main__':
     parser.add_argument("--img_size", type=int, default=256, help="size of each image dimension")
     parser.add_argument("--channels", type=int, default=1, help="number of image channels")
     parser.add_argument("--sample_interval", type=int, default=80, help="interval between image sampling")
-    parser.add_argument("--dataset_name", type=str, default="rf2us4", help="name of the dataset")
+    parser.add_argument("--dataset_name", type=str, default="rf2us5", help="name of the dataset")
     parser.add_argument("--rfdata_len", type=int, default=1024, help="length of rf data")
     parser.add_argument("--split_test", type=bool, default=True, help="if split test")
     parser.add_argument("--network", type=str, default="aecgan", help="if split test")
@@ -330,5 +330,6 @@ if __name__ == '__main__':
 #multi-stage discriminator
 #Coarse2fine
 #pix2pixHD
+
 
 
