@@ -63,9 +63,9 @@ class VAECGan():
         # self.generator = Generator(img_shape=self.img_shape)
         # self.autoencoder = AutoEncoder()
         # self.discriminator = Discriminator()
-        self.generator = torch.load("./saved_models/rf2us4/generator_199.pth")
-        self.autoencoder = torch.load("./saved_models/rf2us4/autoencoder_199.pth")
-        self.discriminator = torch.load("./saved_models/rf2us4/discriminator_199.pth")
+        self.generator = torch.load("./saved_models/rf2us4/generator_200.pth")
+        self.autoencoder = torch.load("./saved_models/rf2us4/autoencoder_200.pth")
+        self.discriminator = torch.load("./saved_models/rf2us4/discriminator_200.pth")
         #self.discriminator = MultiStageDiscriminator()
 
         # Optimizers
