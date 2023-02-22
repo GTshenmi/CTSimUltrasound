@@ -69,7 +69,7 @@ class VAECGan():
         self.optimizer_G = torch.optim.Adam(params=chain(self.generator.parameters(),
                                                 self.autoencoder.parameters()), lr=opt.lr, betas=(opt.b1, opt.b2))
         #self.optimizer_D = torch.optim.Adam(self.discriminator.parameters(), lr=opt.lr, betas=(opt.b1, opt.b2))
-        self.optimizer_D = torch.optim.Adam(self.discriminator.parameters(), lr=0.0001, betas=(opt.b1, opt.b2))
+        self.optimizer_D = torch.optim.Adam(self.discriminator.parameters(), lr=0.0004, betas=(opt.b1, opt.b2))
 
         self.lambda_pixel = 100
         self.criterion_GAN = torch.nn.MSELoss()
@@ -305,7 +305,7 @@ if __name__ == '__main__':
     parser = argparse.ArgumentParser()
     parser.add_argument("--n_epochs", type=int, default=200, help="number of epochs of training")
     parser.add_argument("--batch_size", type=int, default=2, help="size of the batches")
-    parser.add_argument("--lr", type=float, default=0.00025, help="adam: learning rate")
+    parser.add_argument("--lr", type=float, default=0.0001, help="adam: learning rate")
     parser.add_argument("--b1", type=float, default=0.5, help="adam: decay of first order momentum of gradient")
     parser.add_argument("--b2", type=float, default=0.999, help="adam: decay of first order momentum of gradient")
     parser.add_argument("--n_cpu", type=int, default=8, help="number of cpu threads to use during batch generation")

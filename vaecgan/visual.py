@@ -3,20 +3,29 @@ import matplotlib.pyplot as plt
 
 def ShowModelLoss():
 
-    train_loss = np.load("./loss/rf2us4/train_loss.npy")
+    datasetname = "rf2us4"
+
+    train_loss = np.load(f'./loss/{datasetname}/train_loss.npy')
 
     loss_D = []
     loss_G = []
     loss_P = []
     loss_GAN = []
 
+    index = 0
+
     for loss in train_loss:
         loss_D.append(loss[0])
         loss_G.append(loss[1])
         loss_P.append(loss[3])
         loss_GAN.append(loss[4])
+        index = index + 1
+        if index >= 100:
+            break
 
     fig = plt.figure(1)
+    fig.suptitle(datasetname)
+
     ax1=plt.subplot(2,2,1)
     ax1.set_title("Loss D")
     plt.plot(loss_D)
