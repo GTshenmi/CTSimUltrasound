@@ -100,16 +100,18 @@ class MultiStageDiscriminator(nn.Module):
     def forward(self,condition,img):
         # Concatenate image and condition image by channels to produce input
 
-        img1 = torch.cat((img,condition), 1)
+        # img1 = torch.cat((img,condition), 1)
 
-        output1 = self.discriminator1(img1)
+        output1 = self.discriminator1(condition,img)
 
-        img2 = F.max_pool2d(img1,2)
+        img2 = F.max_pool2d(img,2)
+        condition2 = F.max_pool2d(condition,2)
 
-        output2 = self.discriminator2(img2)
+        output2 = self.discriminator2(condition2,img2)
 
         img3 = F.max_pool2d(img2, 2)
+        condition3 = F.max_pool2d(condition2, 2)
 
-        output3 = self.discriminator3(img3)
+        output3 = self.discriminator3(condition3,img3)
 
         return output1,output2,output3

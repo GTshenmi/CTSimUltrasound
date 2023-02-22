@@ -316,10 +316,12 @@ if __name__ == '__main__':
     parser.add_argument("--rfdata_len", type=int, default=1024, help="length of rf data")
     parser.add_argument("--split_test", type=bool, default=True, help="if split test")
     parser.add_argument("--network", type=str, default="aecgan", help="if split test")
-    parser.add_argument("--use_gpu", type=int, default=0, help="use gpu id")
+    parser.add_argument("--use_gpu", type=int, default=1, help="use gpu id")
 
     opt = parser.parse_args()
     print(opt)
+
+    torch.cuda.set_device(opt.use_gpu)
 
     with torch.cuda.device(opt.use_gpu):
         vaecgan = VAECGan(opt)
