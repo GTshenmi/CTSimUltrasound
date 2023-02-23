@@ -3,9 +3,9 @@ import matplotlib.pyplot as plt
 
 def ShowModelLoss():
 
-    datasetname = "rf2us4"
+    datasetname = "rf2us2"
 
-    train_loss = np.load(f'./loss/{datasetname}/train_loss_resume.npy')
+    train_loss = np.load(f'./loss/{datasetname}/train_loss.npy')
 
     loss_D = []
     loss_G = []
