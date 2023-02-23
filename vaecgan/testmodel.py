@@ -218,13 +218,14 @@ def GenerateImg(modelname):
                     save_image(img_sample, "%s/test_%s.png" % (save_path_test, i), nrow=5, normalize=True)
 
                     sys.stdout.write(
-                        "\r[%s] [%s] [Batch %d/%d] [loss: %f]\r\n"
+                        "\r[%s] [%s] [Batch %d/%d] [G loss: %f,pixel loss: %f]\r\n"
                         % (
                             model,
                             dataname,
                             i,
                             len(dataloader),
                             loss_G,
+                            loss_pixel,
                         )
                     )
 
@@ -240,3 +241,4 @@ print(opt)
 torch.cuda.set_device(opt.use_gpu)
 with torch.cuda.device(opt.use_gpu):
     GenerateImg("rf2us1")
+
