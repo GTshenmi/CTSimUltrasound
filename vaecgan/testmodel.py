@@ -156,6 +156,7 @@ def GenerateImg(modelname):
 
     train_loss = []
     test_loss = []
+    test_loss_pix = []
 
     #name = modelname
 
@@ -180,6 +181,7 @@ def GenerateImg(modelname):
                 discriminator.to(device)
 
                 tmp_loss = []
+                tmp_loss_pix = []
 
                 generator.eval()
                 autoencoder.eval()
@@ -209,6 +211,7 @@ def GenerateImg(modelname):
                     loss_G = loss_GAN + lambda_pixel * loss_pixel + loss_AE
 
                     tmp_loss.append(Tensor.cpu(loss_G))
+                    tmp_loss_pix.append(Tensor.cpu(loss_pixel))
 
                     img_sample = torch.cat((fake_imgs.data, real_imgs.data), -2)
 
@@ -226,8 +229,10 @@ def GenerateImg(modelname):
                     )
 
                 test_loss.append(np.mean(tmp_loss))
+                test_loss_pix.append(np.mean(tmp_loss_pix))
 
                 np.save(f'./loss/{modelname}/test_loss.npy', test_loss)
+                np.save(f'./loss/{modelname}/test_loss_pixel.npy', test_loss_pix)
 
             np.save(f'./loss/{modelname}/model_name.npy', model_list)
 
