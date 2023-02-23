@@ -3,7 +3,7 @@ import matplotlib.pyplot as plt
 
 def ShowModelLoss():
 
-    datasetname = "rf2us2"
+    datasetname = "rf2us6"
 
     train_loss = np.load(f'./loss/{datasetname}/train_loss.npy')
 

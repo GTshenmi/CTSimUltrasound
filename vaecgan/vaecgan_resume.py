@@ -1,5 +1,3 @@
-from autoencoder import AutoEncoder
-from gan import Generator,Discriminator,MultiStageDiscriminator
 from datasetnew import MyDataSet
 
 import os
@@ -63,16 +61,16 @@ class VAECGan():
         # self.generator = Generator(img_shape=self.img_shape)
         # self.autoencoder = AutoEncoder()
         # self.discriminator = Discriminator()
-        self.generator = torch.load("./saved_models/rf2us4/generator_200.pth")
-        self.autoencoder = torch.load("./saved_models/rf2us4/autoencoder_200.pth")
-        self.discriminator = torch.load("./saved_models/rf2us4/discriminator_200.pth")
+        self.generator = torch.load("./saved_models/%s/generator_200.pth"%(opt.dataset_name))
+        self.autoencoder = torch.load("./saved_models/%s/autoencoder_200.pth"%(opt.dataset_name))
+        self.discriminator = torch.load("./saved_models/%s/discriminator_200.pth"%(opt.dataset_name))
         #self.discriminator = MultiStageDiscriminator()
 
         # Optimizers
         self.optimizer_G = torch.optim.Adam(params=chain(self.generator.parameters(),
                                                 self.autoencoder.parameters()), lr=opt.lr, betas=(opt.b1, opt.b2))
         #self.optimizer_D = torch.optim.Adam(self.discriminator.parameters(), lr=opt.lr, betas=(opt.b1, opt.b2))
-        self.optimizer_D = torch.optim.Adam(self.discriminator.parameters(), lr=0.0001, betas=(opt.b1, opt.b2))
+        self.optimizer_D = torch.optim.Adam(self.discriminator.parameters(), lr=opt.lr, betas=(opt.b1, opt.b2))
 
         self.lambda_pixel = 100
         self.criterion_GAN = torch.nn.MSELoss()
@@ -91,7 +89,7 @@ class VAECGan():
 
         self.train_loss = np.zeros(5)
         self.test_loss = np.zeros(5)
-        self.train_loss = np.load("./loss/rf2us4/train_loss.npy")
+        self.train_loss = np.load("./loss/%s/train_loss.npy"%(opt.dataset_name))
 
     def SampleImg(self,batches_done,train_real,train_fake):
         """Saves a generated sample from the validation set"""
@@ -255,7 +253,7 @@ class VAECGan():
 
                 # Determine approximate time left
                 batches_done = epoch * len(self.dataloader) + i
-                batches_left = self.opt.n_epochs * len(self.dataloader) - batches_done
+                batches_left = (self.opt.n_epochs+200) * len(self.dataloader) - batches_done
                 time_left = datetime.timedelta(seconds=batches_left * (time.time() - prev_time))
                 prev_time = time.time()
 
@@ -307,20 +305,20 @@ if __name__ == '__main__':
     os.makedirs("../images", exist_ok=True)
 
     parser = argparse.ArgumentParser()
-    parser.add_argument("--n_epochs", type=int, default=100, help="number of epochs of training")
+    parser.add_argument("--n_epochs", type=int, default=150, help="number of epochs of training")
     parser.add_argument("--batch_size", type=int, default=2, help="size of the batches")
-    parser.add_argument("--lr", type=float, default=0.00025, help="adam: learning rate")
+    parser.add_argument("--lr", type=float, default=0.00001, help="adam: learning rate")
     parser.add_argument("--b1", type=float, default=0.5, help="adam: decay of first order momentum of gradient")
     parser.add_argument("--b2", type=float, default=0.999, help="adam: decay of first order momentum of gradient")
     parser.add_argument("--n_cpu", type=int, default=8, help="number of cpu threads to use during batch generation")
     parser.add_argument("--img_size", type=int, default=256, help="size of each image dimension")
     parser.add_argument("--channels", type=int, default=1, help="number of image channels")
     parser.add_argument("--sample_interval", type=int, default=80, help="interval between image sampling")
-    parser.add_argument("--dataset_name", type=str, default="rf2us4", help="name of the dataset")
+    parser.add_argument("--dataset_name", type=str, default="rf2us1", help="name of the dataset")
     parser.add_argument("--rfdata_len", type=int, default=1024, help="length of rf data")
     parser.add_argument("--split_test", type=bool, default=True, help="if split test")
     parser.add_argument("--network", type=str, default="aecgan", help="if split test")
-    parser.add_argument("--use_gpu", type=int, default=0, help="use gpu id")
+    parser.add_argument("--use_gpu", type=int, default=1, help="use gpu id")
     parser.add_argument("--resume", type=bool, default=True, help="if resume train")
 
     opt = parser.parse_args()
@@ -332,11 +330,13 @@ if __name__ == '__main__':
         vaecgan = VAECGan(opt)
         vaecgan.TrainModel()
 
+
 #decode:upsample+conv2d 组合代替 transposed_conv2d，可以减少 checkerboard 的产生,可以采用 pixelshuffle
 #gated-conv2d
 #multi-stage discriminator
 #Coarse2fine
 #pix2pixHD
+
 
 
 
