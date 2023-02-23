@@ -227,7 +227,7 @@ def GenerateImg(modelname):
 
                 test_loss.append(np.mean(tmp_loss))
 
-                np.save(f'./loss/{modelname}/testloss.npy', test_loss)
+                np.save(f'./loss/{modelname}/test_loss.npy', test_loss)
 
             np.save(f'./loss/{modelname}/model_name.npy', model_list)
 
