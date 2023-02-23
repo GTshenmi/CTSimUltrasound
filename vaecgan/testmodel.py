@@ -157,7 +157,7 @@ def GenerateImg(modelname):
     train_loss = []
     test_loss = []
 
-    name = modelname
+    #name = modelname
 
     rootpath = os.path.join("./saved_models/", modelname)
     model_list = os.listdir(rootpath)
@@ -165,8 +165,8 @@ def GenerateImg(modelname):
     with torch.no_grad():
         for model in model_list:
             if "generator" in model:
-                save_path_train = os.path.join("./images/", name,model.replace(".pth",""), "train")
-                save_path_test = os.path.join("./images/", name,model.replace(".pth",""), "test")
+                save_path_train = os.path.join("./images/", modelname,model.replace(".pth",""), "train")
+                save_path_test = os.path.join("./images/", modelname,model.replace(".pth",""), "test")
 
                 os.makedirs(save_path_train, exist_ok=True)
                 os.makedirs(save_path_test, exist_ok=True)
@@ -188,7 +188,7 @@ def GenerateImg(modelname):
                 for i, batch in enumerate(val_dataloader):
                     real_imgs = batch["us"].type(Tensor)
                     rf_datas = batch["rf_data"].type(Tensor)
-                    name = batch["name"][0]
+                    dataname = batch["name"][0]
 
                     batch_size = real_imgs.shape[0]
 
@@ -218,7 +218,7 @@ def GenerateImg(modelname):
                         "\r[%s] [%s] [Batch %d/%d] [loss: %f]\r\n"
                         % (
                             model,
-                            name,
+                            dataname,
                             i,
                             len(dataloader),
                             loss_G,
