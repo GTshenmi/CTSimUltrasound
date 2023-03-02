@@ -125,9 +125,9 @@ def nii_to_image(rootpath,niiname):
 
 import cv2
 from PIL import Image
-
+# import torchvision.transforms as transforms
 # bmpimg = Image.open('./001.bmp')
-pngimg = Image.open('./001.png').convert("RGB")
+pngimg = Image.open('./001.png')
 #
 # print(bmpimg)
 # print(pngimg)
@@ -136,11 +136,12 @@ pngimg = Image.open('./001.png').convert("RGB")
 # pngimg.resize((256,256),Image.ANTIALIAS)
 
 pngimg = pngimg.resize((256,256),Image.BICUBIC)
+pngimg.save("./rgb001.png", 'png')
 
 pngimg = pngimg.convert('L')
 
+pngimg.save("./gray001.png", 'png')
 pngimg.save("./gray001.bmp", 'bmp')
-
 
 # if __name__ == '__main__':
 #     rootDir = "."
