@@ -5,11 +5,14 @@ numpy array. This can be used to produce samples for FID evaluation.
 
 import argparse
 import os
+import sys
 
 import numpy as np
 import torch as th
 import torch.distributed as dist
 
+parentdir = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
+sys.path.insert(0,parentdir)
 from improved_diffusion import dist_util, logger
 from improved_diffusion.script_util import (
     NUM_CLASSES,
@@ -20,11 +23,13 @@ from improved_diffusion.script_util import (
 )
 
 
-def main():
+def main(use_gpu):
     args = create_argparser().parse_args()
 
     dist_util.setup_dist()
     logger.configure()
+
+    device = th.device("cuda:" + str(use_gpu))
 
     logger.log("creating model and diffusion...")
     model, diffusion = create_model_and_diffusion(
@@ -33,7 +38,8 @@ def main():
     model.load_state_dict(
         dist_util.load_state_dict(args.model_path, map_location="cpu")
     )
-    model.to(dist_util.dev())
+    #model.to(dist_util.dev())
+    model.to(device)
     model.eval()
 
     logger.log("sampling...")
@@ -51,7 +57,7 @@ def main():
         )
         sample = sample_fn(
             model,
-            (args.batch_size, 3, args.image_size, args.image_size),
+            (args.batch_size, 1, args.image_size, args.image_size),
             clip_denoised=args.clip_denoised,
             model_kwargs=model_kwargs,
         )
@@ -92,9 +98,9 @@ def create_argparser():
     defaults = dict(
         clip_denoised=True,
         num_samples=10000,
-        batch_size=16,
+        batch_size=1,
         use_ddim=False,
-        model_path="",
+        model_path="/home/xuepeng/ultrasound/neural_networks/iddpm/run_record/openai-2023-03-03-17-23-23-938923/ema_0.9999_010000.pt",
     )
     defaults.update(model_and_diffusion_defaults())
     parser = argparse.ArgumentParser()
@@ -103,4 +109,6 @@ def create_argparser():
 
 
 if __name__ == "__main__":
-    main()
+    use_gpu = 1
+    with th.cuda.device(use_gpu):
+        main(use_gpu)

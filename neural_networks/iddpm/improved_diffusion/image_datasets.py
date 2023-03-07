@@ -80,7 +80,7 @@ class ImageDataset(Dataset):
         with bf.BlobFile(path, "rb") as f:
             pil_image = Image.open(f)
             pil_image.load()
-
+        #print(pil_image.size)
         # We are not on a new enough PIL to support the `reducing_gap`
         # argument, which uses BOX downsampling at powers of two first.
         # Thus, we do it by hand to improve downsample quality.
@@ -94,12 +94,19 @@ class ImageDataset(Dataset):
             tuple(round(x * scale) for x in pil_image.size), resample=Image.BICUBIC
         )
 
-        arr = np.array(pil_image.convert("RGB"))
+        #arr = np.array(pil_image.convert("RGB"))
+        arr = np.array(pil_image)
+
+        arr = arr.reshape((arr.shape[0],arr.shape[1],1))
+
+        # print(f'arr shape:{arr.shape}')
         crop_y = (arr.shape[0] - self.resolution) // 2
         crop_x = (arr.shape[1] - self.resolution) // 2
         arr = arr[crop_y : crop_y + self.resolution, crop_x : crop_x + self.resolution]
+        # print(f'arr shape2:{arr.shape}')
         arr = arr.astype(np.float32) / 127.5 - 1
 
+        #print(pil_image.size)
         out_dict = {}
         if self.local_classes is not None:
             out_dict["y"] = np.array(self.local_classes[idx], dtype=np.int64)

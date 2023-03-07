@@ -188,6 +188,7 @@ class TrainLoop:
     def forward_backward(self, batch, cond):
         zero_grad(self.model_params)
         for i in range(0, batch.shape[0], self.microbatch):
+            # print(f'batch:{batch.shape}')
             micro = batch[i : i + self.microbatch].to(dist_util.dev())
             micro_cond = {
                 k: v[i : i + self.microbatch].to(dist_util.dev())
@@ -195,6 +196,9 @@ class TrainLoop:
             }
             last_batch = (i + self.microbatch) >= batch.shape[0]
             t, weights = self.schedule_sampler.sample(micro.shape[0], dist_util.dev())
+
+            # print("micio")
+            # print(micro.shape)
 
             compute_losses = functools.partial(
                 self.diffusion.training_losses,
@@ -289,6 +293,7 @@ class TrainLoop:
                 bf.join(get_blob_logdir(), f"opt{(self.step+self.resume_step):06d}.pt"),
                 "wb",
             ) as f:
+                #print(f)
                 th.save(self.opt.state_dict(), f)
 
         dist.barrier()
@@ -328,6 +333,8 @@ def parse_resume_step_from_filename(filename):
 
 
 def get_blob_logdir():
+    # print(logger.get_dir())
+    # print(os.environ.get("DIFFUSION_BLOB_LOGDIR", logger.get_dir()))
     return os.environ.get("DIFFUSION_BLOB_LOGDIR", logger.get_dir())
 
 

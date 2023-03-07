@@ -3,7 +3,16 @@ Train a diffusion model on images.
 """
 
 import argparse
+import sys
+import os
 
+import torch
+
+#
+# sys.path.append("..")
+# print(os.path.dirname(os.path.dirname(os.path.abspath(__file__))) )
+parentdir = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
+sys.path.insert(0,parentdir)
 from improved_diffusion import dist_util, logger
 from improved_diffusion.image_datasets import load_data
 from improved_diffusion.resample import create_named_schedule_sampler
@@ -19,8 +28,12 @@ from improved_diffusion.train_util import TrainLoop
 def main():
     args = create_argparser().parse_args()
 
+    #print(args)
+
     dist_util.setup_dist()
     logger.configure()
+
+    logger.log(args)
 
     logger.log("creating model and diffusion...")
     model, diffusion = create_model_and_diffusion(
@@ -59,7 +72,7 @@ def main():
 
 def create_argparser():
     defaults = dict(
-        data_dir="",
+        data_dir="/home/xuepeng/ultrasound/neural_networks/datasetnew/us_image/",
         schedule_sampler="uniform",
         lr=1e-4,
         weight_decay=0.0,
@@ -80,4 +93,5 @@ def create_argparser():
 
 
 if __name__ == "__main__":
-    main()
+    with torch.cuda.device(0):
+        main()

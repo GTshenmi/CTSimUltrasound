@@ -324,7 +324,14 @@ def profile(n):
 
 def get_current():
     if Logger.CURRENT is None:
+        print(None)
         _configure_default_logger()
+    # dir = osp.join(
+    #     "/home/xuepeng/ultrasound/neural_networks/iddpm/run_record",
+    #     datetime.datetime.now().strftime("openai-%Y-%m-%d-%H-%M-%S-%f"),
+    # )
+    # else:
+    #     print(Logger.CURRENT)
 
     return Logger.CURRENT
 
@@ -447,7 +454,7 @@ def configure(dir=None, format_strs=None, comm=None, log_suffix=""):
         dir = os.getenv("OPENAI_LOGDIR")
     if dir is None:
         dir = osp.join(
-            tempfile.gettempdir(),
+            "/home/xuepeng/ultrasound/neural_networks/iddpm/run_record",
             datetime.datetime.now().strftime("openai-%Y-%m-%d-%H-%M-%S-%f"),
         )
     assert isinstance(dir, str)
@@ -465,7 +472,7 @@ def configure(dir=None, format_strs=None, comm=None, log_suffix=""):
             format_strs = os.getenv("OPENAI_LOG_FORMAT_MPI", "log").split(",")
     format_strs = filter(None, format_strs)
     output_formats = [make_output_format(f, dir, log_suffix) for f in format_strs]
-
+    #print(dir)
     Logger.CURRENT = Logger(dir=dir, output_formats=output_formats, comm=comm)
     if output_formats:
         log("Logging to %s" % dir)

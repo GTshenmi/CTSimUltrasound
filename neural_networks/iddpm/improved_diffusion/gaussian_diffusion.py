@@ -691,6 +691,8 @@ class GaussianDiffusion:
             model_kwargs = {}
         if noise is None:
             noise = th.randn_like(x_start)
+
+        # print(x_start.shape)
         x_t = self.q_sample(x_start, t, noise=noise)
 
         terms = {}
@@ -707,7 +709,12 @@ class GaussianDiffusion:
             if self.loss_type == LossType.RESCALED_KL:
                 terms["loss"] *= self.num_timesteps
         elif self.loss_type == LossType.MSE or self.loss_type == LossType.RESCALED_MSE:
+            # print("loss MSE")
+            #
+            # print(x_t.shape)
+            # print(self._scale_timesteps(t))
             model_output = model(x_t, self._scale_timesteps(t), **model_kwargs)
+            # print("out")
 
             if self.model_var_type in [
                 ModelVarType.LEARNED,
