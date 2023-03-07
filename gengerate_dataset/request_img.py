@@ -9,7 +9,7 @@ def download(http):
     # 请求网页前端代码 赋值给html
     html = requests.get(url=url)
     # 通过正则从代码中找到所有图片的链接，返回值是一个列表
-    img_url = re.findall(r'http://.*\.jpg', html.text)
+    img_url = re.findall(r'http://.*MTT', html.text)
     # 循环这个列表
     for u in img_url:
         # 定义图片名字为链接的最后一段

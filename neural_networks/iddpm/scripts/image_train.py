@@ -50,6 +50,8 @@ def main():
         class_cond=args.class_cond,
     )
 
+    # exit()
+
     logger.log("training...")
     TrainLoop(
         model=model,

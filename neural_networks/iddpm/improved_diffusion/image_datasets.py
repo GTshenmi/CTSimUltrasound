@@ -71,11 +71,12 @@ class ImageDataset(Dataset):
         self.resolution = resolution
         self.local_images = image_paths[shard:][::num_shards]
         self.local_classes = None if classes is None else classes[shard:][::num_shards]
-
+        #print(len(self.local_images))
     def __len__(self):
         return len(self.local_images)
 
     def __getitem__(self, idx):
+        # print(len(self.local_images))
         path = self.local_images[idx]
         with bf.BlobFile(path, "rb") as f:
             pil_image = Image.open(f)

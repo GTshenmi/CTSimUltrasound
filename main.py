@@ -126,14 +126,14 @@ import numpy as np
 #     if "patient117_frame01_slice9" in train:
 #         print(True)
 
-array = np.array([0,1,2,3,4])
-array = np.vstack((array,array+5))
-array = np.vstack((array,array+5))
-
-print(0 in array)
-print(5 in array)
-print(15 in array)
-print(100 in array)
+# array = np.array([0,1,2,3,4])
+# array = np.vstack((array,array+5))
+# array = np.vstack((array,array+5))
+#
+# print(0 in array)
+# print(5 in array)
+# print(15 in array)
+# print(100 in array)
 
 #
 # print(np.isin(array,0))
