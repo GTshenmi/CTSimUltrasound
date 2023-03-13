@@ -135,7 +135,7 @@ class AEDiffusion():
                 copy.deepcopy(self.master_params) for _ in range(len(self.ema_rate))
             ]
 
-        if th.cuda.is_available():
+        if th.cuda.is_available() and True:
             self.use_ddp = True
             self.ddp_model = DDP(
                 self.model,
@@ -151,6 +151,7 @@ class AEDiffusion():
                     "Distributed training requires CUDA. "
                     "Gradients will not be synchronized properly!"
                 )
+            # print("not use ddp")
             self.use_ddp = False
             self.ddp_model = self.model
 
@@ -189,12 +190,17 @@ class AEDiffusion():
 
             # print((micro_us.shape,micro_rf.shape,ae_out["enc"].shape))
 
+            model_kwargs = {
+                "encoder_rf": ae_out["enc"],
+            }
+
+
             compute_losses = functools.partial(
                 self.diffusion.training_losses,
                 self.ddp_model,
                 micro_us,
                 t,
-                model_kwargs=ae_out,
+                model_kwargs=model_kwargs,
             )
 
             if last_batch or not self.use_ddp:
@@ -262,14 +268,7 @@ class AEDiffusion():
 
         prev_time = time.time()
 
-        # while (
-        #     not self.lr_anneal_steps
-        #     or self.step + self.resume_step < self.lr_anneal_steps
-        # ):
-        #     batch, cond = next(self.data)
-        #     self.run_step(batch, cond)
-
-
+        # print(self.model)
 
         for epoch in range(self.args.resume_epochs,self.args.epochs + self.args.resume_epochs):
             # train_loss = np.zeros(5)

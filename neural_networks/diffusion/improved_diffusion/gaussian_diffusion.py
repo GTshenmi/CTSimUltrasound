@@ -713,7 +713,9 @@ class GaussianDiffusion:
             #
             # print(x_t.shape)
             # print(self._scale_timesteps(t))
+            # print(model_kwargs["enc"])
             model_output = model(x_t, self._scale_timesteps(t), **model_kwargs)
+            # model_output = model(x_t, self._scale_timesteps(t), model_kwargs["enc"])
             # print("out")
 
             if self.model_var_type in [
