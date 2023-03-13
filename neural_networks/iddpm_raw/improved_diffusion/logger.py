@@ -454,7 +454,7 @@ def configure(dir=None, format_strs=None, comm=None, log_suffix=""):
         dir = os.getenv("OPENAI_LOGDIR")
     if dir is None:
         dir = osp.join(
-            "/home/xuepeng/ultrasound/neural_networks/iddpm/run_record",
+            "/home/xuepeng/ultrasound/neural_networks/iddpm_raw/run_record",
             datetime.datetime.now().strftime("openai-%Y-%m-%d-%H-%M-%S-%f"),
         )
     assert isinstance(dir, str)

@@ -90,7 +90,9 @@ def GengerateTest():
     print(len(label_list))
     print(len(test_list))
 
-
+us = os.listdir("./neural_networks/datasetnew/us_image/")
+print(us)
+print(len(us))
 
 import numpy as np
 # a= ["aaaaa","bbbbb",5]
