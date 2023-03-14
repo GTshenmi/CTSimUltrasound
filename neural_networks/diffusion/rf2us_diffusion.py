@@ -30,6 +30,7 @@ from torch.optim import AdamW
 import copy
 import functools
 import os
+from torch import Tensor
 
 import blobfile as bf
 import numpy as np
@@ -48,6 +49,7 @@ from improved_diffusion.fp16_util import (
 )
 from improved_diffusion.nn import update_ema
 from improved_diffusion.resample import LossAwareSampler, UniformSampler
+from torch.utils.tensorboard import SummaryWriter
 
 INITIAL_LOG_LOSS_SCALE = 20.0
 class AEDiffusion():
@@ -190,9 +192,11 @@ class AEDiffusion():
 
             # print((micro_us.shape,micro_rf.shape,ae_out["enc"].shape))
 
-            model_kwargs = {
-                "encoder_rf": ae_out["enc"],
-            }
+            # model_kwargs = {
+            #     "encoder_rf": ae_out["enc"],
+            # }
+
+            model_kwargs = ae_out
 
 
             compute_losses = functools.partial(
@@ -233,6 +237,31 @@ class AEDiffusion():
                 "ae_loss":ae_out["loss"],
             }
 
+    def SampleImg(self,batch,train_real,train_fake):
+        pass
+
+    def SaveModel(self,epoch):
+
+        def save_checkpoint(rate,unet,autoencoder,epoch):
+            # state_dict = self._master_params_to_state_dict(params)
+            save_path = f'./saved_models/{self.args.train_name}'
+            if dist.get_rank() == 0:
+                if not rate:
+                    filename = f"model_unet_{(epoch+1)}.pth"
+                else:
+                    filename = f"ema_unet_{rate}_{(epoch+1)}.pth"
+                with bf.BlobFile(bf.join(save_path, filename), "wb") as f:
+                    th.save(unet, f)
+                filename = filename.replace("unet","autoencoder")
+                with bf.BlobFile(bf.join(save_path, filename), "wb") as f:
+                    th.save(autoencoder, f)
+
+        if (epoch <= 120 and epoch % 5 == 0) or (epoch > 120) or (epoch == 0):
+            save_checkpoint(0, self.model,self.autoencoder,epoch)
+            for rate, params in zip(self.ema_rate, self.ema_params):
+                save_checkpoint(rate, self.model,self.autoencoder,epoch)
+
+            dist.barrier()
 
     def optimize_fp16(self):
         if any(not th.isfinite(p.grad).all() for p in self.model_params):
@@ -267,11 +296,15 @@ class AEDiffusion():
     def TrainModel(self):
 
         prev_time = time.time()
-
-        # print(self.model)
+        batches_done = 0
+        print(self.model)
+        print(self.autoencoder)
+        writer = SummaryWriter(log_dir="run_record/{}".format(self.args.train_name), flush_secs=120)
 
         for epoch in range(self.args.resume_epochs,self.args.epochs + self.args.resume_epochs):
             # train_loss = np.zeros(5)
+            train_ae_loss = []
+            train_loss = []
             for i, batch in enumerate(self.dataloader):
 
                 # Model inputs
@@ -311,6 +344,18 @@ class AEDiffusion():
                         time_left,
                     )
                 )
+                train_ae_loss.append(self.train_loss["ae_loss"].cpu().detach().numpy())
+                train_loss.append(self.train_loss["loss"].cpu().detach().numpy())
+                # test = np.mean(train_ae_loss)
+                # print(test)
+
+            writer.add_scalar(tag='Loss/{}/train_ae'.format(self.args.train_name),scalar_value = np.mean(train_ae_loss),global_step = epoch)
+            writer.add_scalar(tag='Loss/{}/train'.format(self.args.train_name), scalar_value=np.mean(train_loss), global_step=epoch)
+            writer.flush()
+            # print(epoch)
+            self.SaveModel(epoch)
+
+        writer.close()
 
         #         current_loss_list = []
         #
@@ -338,10 +383,6 @@ class AEDiffusion():
         #
         # np.save("loss/%s/train_loss.npy" % (opt.dataset_name), self.train_loss)
 
-    def SampleImg(self,batches_done,train_real,train_fake):
-        pass
-    def SaveModel(self):
-        pass
 
 
 def create_argparser():
@@ -360,7 +401,7 @@ def create_argparser():
         use_fp16=False,
         fp16_scale_growth=1e-3,
         epochs = 200,
-        use_gpu = 1,
+        use_gpu = 0,
         channels = 1,
         train_name = "rf2us0",
         n_cpu = 6,

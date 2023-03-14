@@ -9,6 +9,7 @@ import enum
 import math
 
 import numpy as np
+import torch
 import torch as th
 
 from .nn import mean_flat
@@ -687,6 +688,8 @@ class GaussianDiffusion:
         :return: a dict with the key "loss" containing a tensor of shape [N].
                  Some mean or variance settings may also have other keys.
         """
+        # print("train")
+        # print(model_kwargs)
         if model_kwargs is None:
             model_kwargs = {}
         if noise is None:
@@ -714,8 +717,18 @@ class GaussianDiffusion:
             # print(x_t.shape)
             # print(self._scale_timesteps(t))
             # print(model_kwargs["enc"])
-            model_output = model(x_t, self._scale_timesteps(t), **model_kwargs)
-            # model_output = model(x_t, self._scale_timesteps(t), model_kwargs["enc"])
+
+
+            model_input = torch.cat((x_t,model_kwargs["enc"]),dim=1)
+
+            # print(x_t.shape)
+            # print(model_kwargs["enc"].shape)
+            # print(model_input.shape)
+
+            model_kwargs = {}
+
+            # model_output = model(x_t, self._scale_timesteps(t), **model_kwargs)
+            model_output = model(model_input, self._scale_timesteps(t), **model_kwargs)
             # print("out")
 
             if self.model_var_type in [
