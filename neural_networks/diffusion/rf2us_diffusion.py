@@ -50,6 +50,7 @@ from improved_diffusion.fp16_util import (
 from improved_diffusion.nn import update_ema
 from improved_diffusion.resample import LossAwareSampler, UniformSampler
 from torch.utils.tensorboard import SummaryWriter
+from PIL import Image
 
 INITIAL_LOG_LOSS_SCALE = 20.0
 class AEDiffusion():
@@ -357,32 +358,159 @@ class AEDiffusion():
 
         writer.close()
 
-        #         current_loss_list = []
-        #
-        #         current_loss_list.append(loss_D.item())
-        #         current_loss_list.append(loss_G.item())
-        #         current_loss_list.append(loss_AE.item())
-        #         current_loss_list.append(loss_pixel.item())
-        #         current_loss_list.append(loss_GAN.item())
-        #
-        #         current_loss = np.array(current_loss_list)
-        #
-        #         train_loss = train_loss + current_loss
-        #
-        #     train_loss = train_loss/len(self.dataloader)
-        #
-        #     self.train_loss = np.vstack((self.train_loss,train_loss))
-        #
-        #     #self.CalTestLoss()
-        #
-        #     self.SampleImg(epoch,real_imgs,fake_imgs)
-        #
-        #     self.SaveModel(epoch)
-        #
-        #     np.save("loss/%s/train_loss.npy" % (opt.dataset_name), self.train_loss)
-        #
-        # np.save("loss/%s/train_loss.npy" % (opt.dataset_name), self.train_loss)
+    def TestModel(self):
 
+        dataloader = DataLoader(
+            MyDataSet(root="../datasetnew/", args=self.args),
+            batch_size=4,
+            shuffle=True,
+            num_workers=8,
+            drop_last=True,
+        )
+
+        val_dataloader = DataLoader(
+            MyDataSet(root="../datasetnew/", args=self.args,mode="test"),
+            batch_size=4,
+            shuffle=True,
+            num_workers=4,
+        )
+
+        # cuda = True if torch.cuda.is_available() else False
+        # Tensor = torch.cuda.FloatTensor if cuda else torch.FloatTensor
+        # device = torch.device("cuda:" + str(self..use_gpu) if cuda else "cpu")
+        # lambda_pixel = 100
+        # criterion_GAN = torch.nn.MSELoss()
+        # criterion_pixelwise = torch.nn.L1Loss()
+        # criterion_AE = torch.nn.MSELoss()
+        # patch = (1, opt.img_size // 2 ** 4, opt.img_size // 2 ** 4)
+
+        # name = modelname
+
+        self.criterion_pixelwise = torch.nn.L1Loss()
+        self.criterion_autoencoder = torch.nn.MSELoss()
+
+        self.criterion_pixelwise.to(self.device)
+        self.criterion_autoencoder.to(self.device)
+
+        rootpath = os.path.join("./saved_models/", self.args.train_name)
+        model_list = os.listdir(rootpath)
+
+        writer = SummaryWriter(log_dir="run_record/{}".format(self.args.train_name), flush_secs=120)
+
+        with torch.no_grad():
+            model_mean_loss = []
+            ae_mean_loss = []
+            for model in model_list:
+                if "autoencoder" in model and "ema" in model:
+
+                    model_index = int(model.split("_")[-1].replace(".pth",""))
+
+                    _, diffusion = create_model_and_diffusion(
+                        **args_to_dict(args, model_and_diffusion_defaults().keys())
+                    )
+                    save_path_train = os.path.join("./images/", self.args.train_name, model.replace(".pth", ""), "train")
+                    save_path_test = os.path.join("./images/", self.args.train_name, model.replace(".pth", ""), "test")
+
+                    os.makedirs(save_path_train, exist_ok=True)
+                    os.makedirs(save_path_test, exist_ok=True)
+                    # print(model)
+
+                    autoencoder = torch.load(os.path.join(rootpath, model))
+                    unet = torch.load(os.path.join(rootpath, model.replace("autoencoder", "unet")))
+
+                    autoencoder.to(self.device)
+                    unet.to(self.device)
+
+                    model_loss = []
+                    ae_loss = []
+
+                    autoencoder.eval()
+                    diffusion.eval()
+
+                    for i, batch in enumerate(val_dataloader):
+
+                        real_imgs = batch["us"].type(self.Tensor)
+                        rf_datas = batch["rf_data"].type(self.Tensor)
+                        dataname = batch["name"][0]
+
+                        batch_size = real_imgs.shape[0]
+
+                        encoder_rf, decoder_rf = autoencoder(rf_datas)
+
+                        sample_fn = (
+                            diffusion.p_sample_loop if not args.use_ddim else diffusion.ddim_sample_loop
+                        )
+
+                        ae_loss_tmp = self.criterion_autoencoder(decoder_rf,rf_datas)
+
+                        model_kwargs = {
+                            "enc":encoder_rf,
+                            "dec":decoder_rf,
+                            "loss":ae_loss_tmp,
+                        }
+
+                        sample = sample_fn(
+                            model,
+                            (args.batch_size, 1, args.image_size, args.image_size),
+                            clip_denoised=args.clip_denoised,
+                            model_kwargs=model_kwargs,
+                        )
+
+
+                        pix_loss = self.criterion_pixelwise(sample,real_imgs)
+                        model_loss.append(pix_loss)
+                        ae_loss.append(ae_loss_tmp)
+
+                        sample = ((sample + 1) * 127.5).clamp(0, 255).to(th.uint8)
+                        sample = sample.permute(0, 2, 3, 1)
+                        sample = sample.contiguous()
+
+                        gathered_samples = [th.zeros_like(sample) for _ in range(dist.get_world_size())]
+                        dist.all_gather(gathered_samples, sample)  # gather not supported with NCCL
+                        img_data = [sample.cpu().numpy() for sample in gathered_samples]
+
+                        sample_path = os.path.join(save_path_test, f"samples_{i}.png")
+
+                        img_data = np.squeeze(img_data, 0)
+                        img_data = np.squeeze(img_data, 3)
+                        # img_data = np.transpose(img_data,[1,2,0])
+
+                        img_sample = img_data[0]
+                        for j in range(1, args.batch_size):
+                            img_sample = np.concatenate((img_sample, img_data[j]), axis=1)
+
+                        imgs = Image.fromarray(img_sample)
+                        imgs.save(sample_path)
+
+                        imgs_read = Image.open(sample_path)
+
+                        imgs_read = np.array(imgs_read)
+
+                        writer.add_image(tag='Loss/{}/test_image_{}'.format(self.args.train_name, model_index),img_tensor = imgs_read, global_step = i, dataformats='HWC')
+
+                        writer.add_scalar(tag='Loss/{}/test_ae_{}'.format(self.args.train_name, model_index),
+                                          scalar_value=pix_loss, global_step=i)
+                        writer.add_scalar(tag='Loss/{}/test_{}'.format(self.args.train_name, model_index),
+                                          scalar_value=np.mean(ae_loss_tmp), global_step=i)
+                        writer.flush()
+
+                        sys.stdout.write(
+                            "\r[%s] [%s] [Batch %d/%d] [AE loss: %f,pixel loss: %f]\r\n"
+                            % (
+                                model,
+                                dataname,
+                                i,
+                                len(dataloader),
+                                ae_loss_tmp,
+                                pix_loss,
+                            )
+                        )
+
+                    writer.add_scalar(tag='Loss/{}/test_ae'.format(self.args.train_name),
+                                      scalar_value=np.mean(model_loss), global_step=model_index)
+                    writer.add_scalar(tag='Loss/{}/test'.format(self.args.train_name),
+                                      scalar_value=np.mean(ae_loss), global_step=model_index)
+                    writer.flush()
 
 
 def create_argparser():

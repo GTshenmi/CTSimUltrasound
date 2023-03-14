@@ -90,9 +90,13 @@ def GengerateTest():
     print(len(label_list))
     print(len(test_list))
 
-us = os.listdir("./neural_networks/datasetnew/us_image/")
-print(us)
-print(len(us))
+# us = os.listdir("./neural_networks/datasetnew/us_image/")
+# print(us)
+# print(len(us))
+
+s = "ema_autoencoder_0.9999_1.pth"
+
+print(s.split("_")[-1].replace(".pth",""))
 
 import numpy as np
 # a= ["aaaaa","bbbbb",5]
