@@ -847,6 +847,226 @@ class GaussianDiffusion:
         }
 
 
+    def classifier_free_p_mean_variance(
+        self, model, x, t, clip_denoised=True, denoised_fn=None, model_kwargs=None
+    ):
+        """
+        Apply the model to get p(x_{t-1} | x_t), as well as a prediction of
+        the initial x, x_0.
+
+        :param model: the model, which takes a signal and a batch of timesteps
+                      as input.
+        :param x: the [N x C x ...] tensor at time t.
+        :param t: a 1-D Tensor of timesteps.
+        :param clip_denoised: if True, clip the denoised signal into [-1, 1].
+        :param denoised_fn: if not None, a function which applies to the
+            x_start prediction before it is used to sample. Applies before
+            clip_denoised.
+        :param model_kwargs: if not None, a dict of extra keyword arguments to
+            pass to the model. This can be used for conditioning.
+        :return: a dict with the following keys:
+                 - 'mean': the model mean output.
+                 - 'variance': the model variance output.
+                 - 'log_variance': the log of 'variance'.
+                 - 'pred_xstart': the prediction for x_0.
+        """
+        if model_kwargs is None:
+            model_kwargs = {}
+
+        B, C = x.shape[:2]
+        assert t.shape == (B,)
+
+        self.w = 0
+
+        model_cond = model_kwargs["enc"]
+        cond_shape = model_cond.shape
+        model_kwargs = {}
+
+        model_input = torch.cat((x,model_cond),dim=1)
+        pred_eps_cond = model(model_input, self._scale_timesteps(t), **model_kwargs)
+
+        model_input = torch.cat((x, torch.zeros(cond_shape)), dim=1)
+        pred_eps_uncond = model(model_input, self._scale_timesteps(t), **model_kwargs)
+
+        model_output =  (1 + self.w) * pred_eps_cond - self.w * pred_eps_uncond
+
+        if self.model_var_type in [ModelVarType.LEARNED, ModelVarType.LEARNED_RANGE]:
+            assert model_output.shape == (B, C * 2, *x.shape[2:])
+            model_output, model_var_values = th.split(model_output, C, dim=1)
+            if self.model_var_type == ModelVarType.LEARNED:
+                model_log_variance = model_var_values
+                model_variance = th.exp(model_log_variance)
+            else:
+                min_log = _extract_into_tensor(
+                    self.posterior_log_variance_clipped, t, x.shape
+                )
+                max_log = _extract_into_tensor(np.log(self.betas), t, x.shape)
+                # The model_var_values is [-1, 1] for [min_var, max_var].
+                frac = (model_var_values + 1) / 2
+                model_log_variance = frac * max_log + (1 - frac) * min_log
+                model_variance = th.exp(model_log_variance)
+        else:
+            model_variance, model_log_variance = {
+                # for fixedlarge, we set the initial (log-)variance like so
+                # to get a better decoder log likelihood.
+                ModelVarType.FIXED_LARGE: (
+                    np.append(self.posterior_variance[1], self.betas[1:]),
+                    np.log(np.append(self.posterior_variance[1], self.betas[1:])),
+                ),
+                ModelVarType.FIXED_SMALL: (
+                    self.posterior_variance,
+                    self.posterior_log_variance_clipped,
+                ),
+            }[self.model_var_type]
+            model_variance = _extract_into_tensor(model_variance, t, x.shape)
+            model_log_variance = _extract_into_tensor(model_log_variance, t, x.shape)
+
+        def process_xstart(x):
+            if denoised_fn is not None:
+                x = denoised_fn(x)
+            if clip_denoised:
+                return x.clamp(-1, 1)
+            return x
+
+        if self.model_mean_type == ModelMeanType.PREVIOUS_X:
+
+            pred_xstart = process_xstart(
+                self._predict_xstart_from_xprev(x_t=x, t=t, xprev=model_output)
+            )
+            model_mean = model_output
+        elif self.model_mean_type in [ModelMeanType.START_X, ModelMeanType.EPSILON]:
+            if self.model_mean_type == ModelMeanType.START_X:
+                pred_xstart = process_xstart(model_output)
+            else:
+                pred_xstart = process_xstart(
+                    self._predict_xstart_from_eps(x_t=x, t=t, eps=model_output)
+                )
+            model_mean, _, _ = self.q_posterior_mean_variance(
+                x_start=pred_xstart, x_t=x, t=t
+            )
+        else:
+            raise NotImplementedError(self.model_mean_type)
+
+        assert (
+            model_mean.shape == model_log_variance.shape == pred_xstart.shape == x.shape
+        )
+        return {
+            "mean": model_mean,
+            "variance": model_variance,
+            "log_variance": model_log_variance,
+            "pred_xstart": pred_xstart,
+        }
+    def classifier_free_p_sample(self, model, x, t, clip_denoised=True, denoised_fn=None, model_kwargs=None):
+        """
+        CLASSIFIER-FREE DIFFUSION Sample Function
+        :return: a dict containing the following keys:
+                 - 'sample': a random sample from the model.
+                 - 'pred_xstart': a prediction of x_0.
+        """
+        out = self.classifier_free_p_mean_variance(
+            model,
+            x,
+            t,
+            clip_denoised=clip_denoised,
+            denoised_fn=denoised_fn,
+            model_kwargs=model_kwargs,
+        )
+        noise = th.randn_like(x)
+        nonzero_mask = (
+            (t != 0).float().view(-1, *([1] * (len(x.shape) - 1)))
+        )  # no noise when t == 0
+        sample = out["mean"] + nonzero_mask * th.exp(0.5 * out["log_variance"]) * noise
+        return {"sample": sample, "pred_xstart": out["pred_xstart"]}
+    def classifier_free_p_sample_loop(
+        self,
+        model,
+        shape,
+        noise=None,
+        clip_denoised=True,
+        denoised_fn=None,
+        model_kwargs=None,
+        device=None,
+        progress=False,
+    ):
+        """
+        Generate samples from the model.
+
+        :param model: the model module.
+        :param shape: the shape of the samples, (N, C, H, W).
+        :param noise: if specified, the noise from the encoder to sample.
+                      Should be of the same shape as `shape`.
+        :param clip_denoised: if True, clip x_start predictions to [-1, 1].
+        :param denoised_fn: if not None, a function which applies to the
+            x_start prediction before it is used to sample.
+        :param model_kwargs: if not None, a dict of extra keyword arguments to
+            pass to the model. This can be used for conditioning.
+        :param device: if specified, the device to create the samples on.
+                       If not specified, use a model parameter's device.
+        :param progress: if True, show a tqdm progress bar.
+        :return: a non-differentiable batch of samples.
+        """
+        final = None
+        for sample in self.classifier_free_p_sample_loop_progressive(
+            model,
+            shape,
+            noise=noise,
+            clip_denoised=clip_denoised,
+            denoised_fn=denoised_fn,
+            model_kwargs=model_kwargs,
+            device=device,
+            progress=progress,
+        ):
+            final = sample
+        return final["sample"]
+
+    def classifier_free_p_sample_loop_progressive(
+        self,
+        model,
+        shape,
+        noise=None,
+        clip_denoised=True,
+        denoised_fn=None,
+        model_kwargs=None,
+        device=None,
+        progress=False,
+    ):
+        """
+        Generate samples from the model and yield intermediate samples from
+        each timestep of diffusion.
+
+        Arguments are the same as p_sample_loop().
+        Returns a generator over dicts, where each dict is the return value of
+        p_sample().
+        """
+        if device is None:
+            device = next(model.parameters()).device
+        assert isinstance(shape, (tuple, list))
+        if noise is not None:
+            img = noise
+        else:
+            img = th.randn(*shape, device=device)
+        indices = list(range(self.num_timesteps))[::-1]
+
+        if progress:
+            # Lazy import so that we don't depend on tqdm.
+            from tqdm.auto import tqdm
+
+            indices = tqdm(indices)
+
+        for i in indices:
+            t = th.tensor([i] * shape[0], device=device)
+            with th.no_grad():
+                out = self.classifier_free_p_sample(
+                    model,
+                    img,
+                    t,
+                    clip_denoised=clip_denoised,
+                    denoised_fn=denoised_fn,
+                    model_kwargs=model_kwargs,
+                )
+                yield out
+                img = out["sample"]
+
 def _extract_into_tensor(arr, timesteps, broadcast_shape):
     """
     Extract values from a 1-D numpy array for a batch of indices.

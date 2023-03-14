@@ -438,7 +438,7 @@ class AEDiffusion():
                         encoder_rf, decoder_rf = autoencoder(rf_datas)
 
                         sample_fn = (
-                            diffusion.p_sample_loop if not args.use_ddim else diffusion.ddim_sample_loop
+                            diffusion.classifier_free_p_sample_loop if not args.use_ddim else diffusion.ddim_sample_loop
                         )
 
                         ae_loss_tmp = self.criterion_autoencoder(decoder_rf,rf_datas)
